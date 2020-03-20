@@ -147,7 +147,7 @@ def iterate_restaurants_of_city(city_url,city_id,city_name):
             # entrys = no_sponsors.findAll('a', class_='_15_ydu6b')
             i = 1
             for restaurant in all_restaurants:
-                if(x >= 10):
+                if(x >1):
                     if(restaurant.find('div' , class_='_376lhJeB fXv-kKaf') == None ):
                         href = restaurant.find('a', class_= '_15_ydu6b')['href']
                         restaurant_url = 'https://www.tripadvisor.com' + href
