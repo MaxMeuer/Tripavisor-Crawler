@@ -126,14 +126,14 @@ def iterate_restaurants_of_city(city_url,city_id,city_name):
     number_of_pages =  int(all_page_numbers[-1].getText())
 
     for x in range(number_of_pages + 1):
-        # if(x == 0):
-        #     init_entrys = init_restaurant_html.findAll('a', class_='_15_ydu6b')
-        #     z = 1
-        #     for item in init_entrys:
-        #             # print('Restaurant: ' + str(z) + 'name: ' + item['href'])
-        #             restaurant_url = 'https://www.tripadvisor.com' + item['href']
-        #             iterate_page(restaurant_url,db_city_id)
-        #             z  = z+1
+        if(x == 0):
+            init_entrys = init_restaurant_html.findAll('a', class_='_15_ydu6b')
+            z = 1
+            for item in init_entrys:
+                    # print('Restaurant: ' + str(z) + 'name: ' + item['href'])
+                    restaurant_url = 'https://www.tripadvisor.com' + item['href']
+                    iterate_page(restaurant_url,db_city_id)
+                    z  = z+1
 
 
         if (x > 1):
