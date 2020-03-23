@@ -51,6 +51,7 @@ class db_connector:
 
 
         except (Exception, psycopg2.Error) as error :
+            # pass
             print ("Error while connecting to PostgreSQL", error)
         finally:
             #closing database connection.
@@ -74,9 +75,9 @@ class db_connector:
          return act_id
 
     def write_sentiment(act_id,data):
-         sql = "INSERT INTO sentiment(activity_id, stars, title,  create_date ) VALUES (%s,%s,%s,%s)"
-         print(data[1],data[3])
-         db_connector.write_into_db(sql, (act_id,data[0],data[1],data[3]))
+         sql = "INSERT INTO sentiment(activity_id, stars, title,  create_date, visit_date ) VALUES (%s,%s,%s,%s,%s)"
+         # print(data[1])
+         db_connector.write_into_db(sql, (act_id,data[0],data[1],data[3],data[2]))
 
 
 # write_into_db( "INSERT INTO city(city_name, coordinates ) VALUES (%s,point%s) RETURNING id",('bsa',(1,2)))
