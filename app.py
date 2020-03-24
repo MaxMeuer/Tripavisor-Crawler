@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim
 from db_connector import *
+from hotels import *
 from functools import partial
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -48,11 +49,50 @@ def get_review_content(container):
 
         return [stars,text,visit_date, date_of_review]
 
+def format_date_hotel(date,type):
+    if(type == 'review'):
+        print(date[-4])
+        if(date[-4] != "2"):
+            return ""
+        else:
+            year = date[-4:]
+            month = date[:3]
+            return month + " 1," + year
+
+
+def get_review_content_hotel(container):
+    stars_span = container.find('span', class_='ui_bubble_rating')
+    stars_string = str(stars_span)
+    stars = re.findall(r'\d+', stars_string)[0]
+
+    # get date of Review
+    date_div = container.find('div', class_='social-member-event-MemberEventOnObjectBlock__event_type--3njyv').find('span', recursive= False).get_text()
+    # print(date_div)
+    date_of_review = format_date_hotel(date_div[-8:],'review')
+
+    # get date of Visit
+    visit_date = container.find("div", class_='location-review-review-list-parts-EventDate__event_date--1epHa')
+    if (visit_date == None):
+        visit_date = date_of_review
+    else:
+        visit_date = "1" + visit_date.get_text()
+
+    text_a = container.find('a', class_='location-review-review-list-parts-ReviewTitle__reviewTitleText--2tFRT')
+    text = text_a.find('span', recursive=False).get_text()
+
+    return [stars, text, visit_date, date_of_review]
+
 
 def create_url(url, page_number):
         partitioned_url = url.partition('Reviews')
         loop_url = partitioned_url[0] + partitioned_url[1] + '-or' + str(page_number) + '0'+ partitioned_url[2]
         return loop_url
+
+
+def create_url_hotel(url, page_number):
+    partitioned_url = url.partition('Reviews')
+    loop_url = partitioned_url[0] + partitioned_url[1] + '-or' + str(page_number*5) + partitioned_url[2]
+    return loop_url
 
 def check_date(date):
     print(date)
@@ -75,9 +115,7 @@ def iterate_activity(initial_url,id):
 
     # get Name and add to db
     item_name = html_soup.find('h1', class_='ui_header').get_text()
-    # print(item_name)
     item_id = db_connector.write_activity( id, item_name,'restaurant')
-    # print(item_id)
 
     # number of review Pages for single Item
     number_of_pages_html = html_soup.find('a', class_='last')
@@ -112,10 +150,58 @@ def iterate_activity(initial_url,id):
                 # do nuttin
                 pass
 
-def create_next_page_url(url, id,index):
+def iterate_hotel(initial_url, id):
+    initial_response = session.get(initial_url)
+    html_soup = BeautifulSoup(initial_response.text, 'html.parser')
+
+    # get Name and add to db
+    item_name = html_soup.find('h1', class_='hotels-hotel-review-atf-info-parts-Heading__heading--2ZOcD').get_text()
+
+    item_id = db_connector.write_activity(id, item_name, 'hotel')
+
+    # number of review Pages for single Item
+    number_of_pages_html = html_soup.findAll('a', class_='pageNum')
+    if (len(number_of_pages_html) != 0):
+        number_of_pages = int(number_of_pages_html[-1].get_text())
+    else:
+        number_of_pages = 0
+
+    for i in range(number_of_pages):
+        # print("i: " + str(i))
+        if (i != 0):
+            loop_url = create_url_hotel(initial_url, i)
+            # get Reviews
+            loop_response = session.get(loop_url)
+            html_soup = BeautifulSoup(loop_response.text, 'html.parser')
+    #
+        review_containers = html_soup.find_all('div', class_='hotels-community-tab-common-Card__card--ihfZB hotels-community-tab-common-Card__section--4r93H')
+        z = 1
+
+        for EachPart in review_containers:
+            # print("review: " + str(i)+ str(z))
+            # get_review_content_hotel(EachPart)
+            review_data = get_review_content(EachPart)
+            check = check_date(review_data[2])
+            if (check == "write"):
+                # write into Db
+                db_connector.write_sentiment(item_id, review_data)
+            elif (check == 'break'):
+                return
+            else:
+                # do nuttin
+                pass
+
+def create_next_page_url_restaurant(url, id,index):
      partitioned_url = url.partition('-'+id)
      url = partitioned_url[0][:-1] + 'Search' + partitioned_url[1] + "-oa" + str(index * 30 ) + partitioned_url[2]
      return url
+
+
+def create_next_page_url_hotel(url, id, index):
+    partitioned_url = url.partition('-' + id)
+    url = partitioned_url[0]  + partitioned_url[1] + "-oa" + str(index * 30) + partitioned_url[2]
+    return url
+
 
 def get_coordinates(name):
          geolocator = Nominatim(user_agent="specify_your_app_name_here")
@@ -128,13 +214,8 @@ def db_write_city(name):
     db_city_id = db_connector.write_city(name, coordinates)
     return db_city_id
 
-
-city_url = "https://www.tripadvisor.com/Restaurants-g35805-Chicago_Illinois.html"
-city_name = "Chicago"
-tripadvisor_city_id = "g35805"
-
-def iterate_pages(url, id):
-        response =  session.get(url)
+def iterate_pages_restaurant(url, id):
+        response = session.get(url)
         restaurants_html = BeautifulSoup(response.text, 'html.parser')
         all_restaurants = restaurants_html.findAll('div' , class_='_1kNOY9zw')
 
@@ -147,33 +228,54 @@ def iterate_pages(url, id):
                 iterate_activity(restaurant_url,id)
                 i = i + 1
 
+def iterate_pages_hotel(url,id):
+    response = session.get(url)
+    hotel_html = BeautifulSoup(response.text, 'html.parser')
+    all_hotels = hotel_html.findAll('div', class_='listing collapsed')
 
-def iterate_restaurants_of_city(city_url,city_id,city_name):
-    db_city_id = db_write_city(city_name)
+    i = 1
+    for hotel in all_hotels:
+        if(hotel.find('span', class_='ui_merchandising_pill sponsored_v2') == None):
+            print(i)
+            href = hotel.find('a' , class_= 'property_title prominent')['href']
+            hotel_url = 'https://www.tripadvisor.com' + href
+            i =i+1
+            iterate_hotel(hotel_url, id)
+
+def all_urls_of_city(city_url,city_id,type):
     init_restaurant_response = session.get(city_url)
     init_restaurant_html = BeautifulSoup(init_restaurant_response.text, 'html.parser')
     # count number of pages to iterate
     all_page_numbers = init_restaurant_html.findAll('a', class_='pageNum')
     number_of_pages =  int(all_page_numbers[-1].getText())
-
     all_urls = []
     all_urls.append(city_url)
     for x in range(number_of_pages + 1):
         if x > 1:
-            next_page_restaurants_url = create_next_page_url(city_url, tripadvisor_city_id, x - 1)
-            all_urls.append(next_page_restaurants_url)
+            if(type == 'hotel'):
+                next_page_url = create_next_page_url_hotel(city_url, city_id, x - 1)
+            else:
+                next_page_url = create_next_page_url_restaurant(city_url, city_id, x - 1)
+            all_urls.append(next_page_url)
+    return all_urls
 
-    return [all_urls ,db_city_id]
+restaurant_url = "https://www.tripadvisor.com/Restaurants-g35805-Chicago_Illinois.html"
+hotel_url = "https://www.tripadvisor.com/Hotels-g35805-Chicago_Illinois-Hotels.html"
+city_name = "Chicago"
+tripadvisor_city_id = "g35805"
 
 if __name__ == '__main__':
-    response = iterate_restaurants_of_city(city_url, tripadvisor_city_id, city_name)
-    db_city_id = response[1]
-    all_urls = response[0]
-    helper = partial(iterate_pages, id = db_city_id)
-    p = Pool(4)
-    p.map(helper, all_urls)
-    p.terminate()
-    p.join()
+    restaurant_urls = all_urls_of_city(restaurant_url, tripadvisor_city_id,'rest')
+    hotel_urls = all_urls_of_city(hotel_url,tripadvisor_city_id,'hotel')
+    # hotel_helper = partial(iterate_pages_hotel, id=5)
+    db_city_id = db_write_city(city_name)
+    for url in hotel_urls:
+        iterate_pages_hotel(url, db_city_id)
+    # helper = partial(iterate_pages_restaurant, id = db_city_id)
+    # p = Pool(4)
+    # p.map(helper, restaurant_urls)
+    # p.terminate()
+    # p.join()
 
 
 
