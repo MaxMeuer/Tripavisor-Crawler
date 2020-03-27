@@ -180,12 +180,21 @@ def iterate_sight(initial_url, id):
     item_id = db_connector.write_activity(id, item_name, 'sight')
 
     # number of review Pages for single Item
-    inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
-    number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
-
-    print(number_of_pages_html)
-    if (len(number_of_pages_html) != 0):
-        number_of_pages = int(number_of_pages_html[-1].get_text())
+    # inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
+    # number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
+    #
+    # print(number_of_pages_html)
+    # if (len(number_of_pages_html) != 0):
+    #     number_of_pages = int(number_of_pages_html[-1].get_text())
+    # else:
+    #     number_of_pages = 1
+    # print('NoP: ' + str(number_of_pages))
+    number_of_pages = html_soup.find('span', class_='location-review-review-list-parts-LanguageFilter__paren_count--2vk3f')
+    if(number_of_pages != None):
+        number_of_pages = number_of_pages.get_text()
+        # print(number_of_pages)
+        number_of_pages = number_of_pages.replace("(", "").replace(")","").replace(",","")
+        number_of_pages = math.ceil(int(number_of_pages) / 5)
     else:
         number_of_pages = 1
     print('NoP: ' + str(number_of_pages))
@@ -222,10 +231,18 @@ def iterate_hotel(initial_url, id):
     item_id = db_connector.write_activity(id, item_name, 'hotel')
 
     # number of review Pages for single Item
-    inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
-    number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
-    if (len(number_of_pages_html) != 0):
-        number_of_pages = int(number_of_pages_html[-1].get_text())
+    # inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
+    # number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
+    # if (len(number_of_pages_html) != 0):
+    #     number_of_pages = int(number_of_pages_html[-1].get_text())
+    # else:
+    #     number_of_pages = 1
+    number_of_pages = html_soup.findAll('span', class_='location-review-review-list-parts-LanguageFilter__paren_count--2vk3f')
+    if(number_of_pages != None):
+        number_of_pages = number_of_pages[1].get_text()
+        # print(number_of_pages)
+        number_of_pages = number_of_pages.replace("(", "").replace(")","").replace(",","")
+        number_of_pages = math.ceil(int(number_of_pages) / 5)
     else:
         number_of_pages = 1
 
@@ -359,9 +376,9 @@ if __name__ == '__main__':
     print(db_city_id)
     p = Pool(processes=4)
     # print(len(sight_urls))
-    p.map_async(sight_helper, sight_urls)
-    # p.map_async(hotel_helper, hotel_urls)
-    # p.map_async(restaurant_helper, restaurant_urls)
+    p.map(sight_helper, sight_urls)
+    p.map(hotel_helper, hotel_urls)
+    p.map(restaurant_helper, restaurant_urls)
 
     p.close()
     p.join()
