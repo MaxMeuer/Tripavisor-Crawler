@@ -1,6 +1,7 @@
 from requests import get
 import requests
 import re
+import math
 import random
 from multiprocessing import Pool
 from bs4 import BeautifulSoup
@@ -180,29 +181,38 @@ def iterate_sight(initial_url, id):
     item_id = db_connector.write_activity(id, item_name, 'sight')
 
     # number of review Pages for single Item
-    inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
-    number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
-
-    print(number_of_pages_html)
-    if (len(number_of_pages_html) != 0):
-        number_of_pages = int(number_of_pages_html[-1].get_text())
+    # inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
+    # number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
+    #
+    # print(number_of_pages_html)
+    # if (len(number_of_pages_html) != 0):
+    #     number_of_pages = int(number_of_pages_html[-1].get_text())
+    # else:
+    #     number_of_pages = 1
+    # print('NoP: ' + str(number_of_pages))
+    number_of_pages = html_soup.find('span', class_='location-review-review-list-parts-LanguageFilter__paren_count--2vk3f')
+    if(number_of_pages != None):
+        number_of_pages = number_of_pages.get_text()
+        # print(number_of_pages)
+        number_of_pages = number_of_pages.replace("(", "").replace(")","").replace(",","")
+        number_of_pages = math.ceil(int(number_of_pages) / 5)
     else:
         number_of_pages = 1
-    print('NoP: ' + str(number_of_pages))
+
     for i in range(number_of_pages):
         # print("i: " + str(i))
         if (i != 0):
+            print("loop I"  + str(i))
             loop_url = create_url_hotel(initial_url, i)
             # get Reviews
             loop_response = session.get(loop_url)
             html_soup = BeautifulSoup(loop_response.text, 'lxml')
 
         review_containers = html_soup.findAll('div', class_='location-review-card-Card__ui_card--2Mri0 location-review-card-Card__card--o3LVm location-review-card-Card__section--NiAcw')
-        print("Menge an Reviews: " + str(len(review_containers)))
         for EachPart in review_containers:
             review_data = get_review_content_sight(EachPart)
             check = check_date(review_data[2])
-            print("date" + review_data[2] +" Check " + check)
+            # print("date" + review_data[2] +" Check " + check)
             if (check == "write"):
                 # write into Db
                 db_connector.write_sentiment(item_id, review_data)
@@ -222,13 +232,22 @@ def iterate_hotel(initial_url, id):
     item_id = db_connector.write_activity(id, item_name, 'hotel')
 
     # number of review Pages for single Item
-    inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
-    number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
-    if (len(number_of_pages_html) != 0):
-        number_of_pages = int(number_of_pages_html[-1].get_text())
+    # inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
+    # number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
+    # if (len(number_of_pages_html) != 0):
+    #     number_of_pages = int(number_of_pages_html[-1].get_text())
+    # else:
+    #     number_of_pages = 1
+    number_of_pages = html_soup.findAll('span', class_='location-review-review-list-parts-LanguageFilter__paren_count--2vk3f')
+    if(number_of_pages != None):
+        number_of_pages = number_of_pages[1].get_text()
+        # print(number_of_pages)
+        number_of_pages = number_of_pages.replace("(", "").replace(")","").replace(",","")
+        number_of_pages = math.ceil(int(number_of_pages) / 5)
     else:
         number_of_pages = 1
-
+    print(item_name)
+    print(number_of_pages)
     for i in range(number_of_pages):
         # print("i: " + str(i))
         if (i != 0):
@@ -358,10 +377,12 @@ if __name__ == '__main__':
     sight_helper = partial(iterate_pages_sight,id = db_city_id)
     print(db_city_id)
     p = Pool(processes=4)
+    for  url in hotel_urls:
+        iterate_pages_hotel( db_city_id,url)
     # print(len(sight_urls))
-    p.map_async(sight_helper, sight_urls)
-    p.map_async(hotel_helper, hotel_urls)
-    p.map_async(restaurant_helper, restaurant_urls)
+    p.map(sight_helper, sight_urls)
+    p.map(hotel_helper, hotel_urls)
+    p.map(restaurant_helper, restaurant_urls)
 
     p.close()
     p.join()
