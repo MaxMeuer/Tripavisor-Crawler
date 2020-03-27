@@ -116,7 +116,7 @@ def create_url_hotel(url, page_number):
     return loop_url
 
 def check_date(date):
-    print(date)
+    # print(date)
     if(date== '' or date[-3:] == "ago" or date[-4:] == "2020"):
         return "skip"
     elif( 2020 > int(date[-4:]) > 2010):
@@ -207,8 +207,11 @@ def iterate_sight(initial_url, id):
             # get Reviews
             loop_response = session.get(loop_url)
             html_soup = BeautifulSoup(loop_response.text, 'lxml')
+            review_containers = html_soup.findAll('div', class_='location-review-card-Card__ui_card--2Mri0 location-review-card-Card__card--o3LVm location-review-card-Card__section--NiAcw')
 
-        review_containers = html_soup.findAll('div', class_='location-review-card-Card__ui_card--2Mri0 location-review-card-Card__card--o3LVm location-review-card-Card__section--NiAcw')
+        else:
+            review_containers = html_soup.findAll('div', class_='location-review-card-Card__ui_card--2Mri0 location-review-card-Card__card--o3LVm location-review-card-Card__section--NiAcw')
+
         for EachPart in review_containers:
             review_data = get_review_content_sight(EachPart)
             check = check_date(review_data[2])
@@ -255,8 +258,9 @@ def iterate_hotel(initial_url, id):
             # get Reviews
             loop_response = session.get(loop_url)
             html_soup = BeautifulSoup(loop_response.text, 'lxml')
-
-        review_containers = html_soup.findAll('div', class_='hotels-community-tab-common-Card__card--ihfZB hotels-community-tab-common-Card__section--4r93H')
+            review_containers = html_soup.findAll('div', class_='hotels-community-tab-common-Card__card--ihfZB hotels-community-tab-common-Card__section--4r93H')
+        else:
+            review_containers = html_soup.findAll('div', class_='hotels-community-tab-common-Card__card--ihfZB hotels-community-tab-common-Card__section--4r93H')
         z = 1
 
         for EachPart in review_containers:
@@ -377,11 +381,15 @@ if __name__ == '__main__':
     sight_helper = partial(iterate_pages_sight,id = db_city_id)
     print(db_city_id)
     p = Pool(processes=4)
-    for  url in hotel_urls:
-        iterate_pages_hotel( db_city_id,url)
+    # for  url in sight_urls:
+    #     iterate_pages_sight( url, db_city_id)
     # print(len(sight_urls))
     p.map(sight_helper, sight_urls)
+    p.close()
+    p.join()
     p.map(hotel_helper, hotel_urls)
+    p.close()
+    p.join()
     p.map(restaurant_helper, restaurant_urls)
 
     p.close()
