@@ -360,8 +360,8 @@ if __name__ == '__main__':
     p = Pool(processes=4)
     # print(len(sight_urls))
     p.map_async(sight_helper, sight_urls)
-    p.map_async(hotel_helper, hotel_urls)
-    p.map_async(restaurant_helper, restaurant_urls)
+    # p.map_async(hotel_helper, hotel_urls)
+    # p.map_async(restaurant_helper, restaurant_urls)
 
     p.close()
     p.join()
