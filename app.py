@@ -172,6 +172,7 @@ def iterate_activity(initial_url,id):
                 pass
 
 def iterate_sight(initial_url, id):
+    # pass
     initial_response = session.get(initial_url)
     html_soup = BeautifulSoup(initial_response.text, 'lxml')
 
@@ -387,13 +388,16 @@ if __name__ == '__main__':
     p.map(sight_helper, sight_urls)
     p.close()
     p.join()
-    p.map(hotel_helper, hotel_urls)
-    p.close()
-    p.join()
-    p.map(restaurant_helper, restaurant_urls)
-
-    p.close()
-    p.join()
+    # p = Pool(processes=4)
+    #
+    # p.map(hotel_helper, hotel_urls)
+    # p.close()
+    # p.join()
+    # p = Pool(processes=4)
+    #
+    # p.map(restaurant_helper, restaurant_urls)
+    # p.close()
+    # p.join()
 
 
 
