@@ -136,11 +136,19 @@ def get_soup(url):
 
 def iterate_activity(initial_url,id):
     # inital page of item
-    initial_response = session.get(initial_url)
+    try:
+        initial_response = session.get(initial_url)
+    except:
+        return
     html_soup = BeautifulSoup(initial_response.text, 'lxml')
 
     # get Name and add to db
-    item_name = html_soup.find('h1', class_='ui_header').get_text()
+    item_soup = html_soup.find('h1', class_='ui_header')
+    if (item_soup != None):
+        item_name = item_soup.get_text()
+    else:
+        item_name = 'Name not Available'
+
     item_id = db_connector.write_activity( id, item_name,'restaurant')
 
     # number of review Pages for single Item
@@ -157,7 +165,11 @@ def iterate_activity(initial_url,id):
             loop_url = create_url(initial_url, i)
             print(loop_url)
             # get Reviews
-            loop_response = session.get(loop_url)
+
+            try:
+                loop_response = session.get(loop_url)
+            except:
+                continue
             html_soup = BeautifulSoup(loop_response.text, 'lxml')
             review_containers = html_soup.findAll('div', class_='review-container')
 
@@ -169,6 +181,8 @@ def iterate_activity(initial_url,id):
         for EachPart in review_containers:
             # print("review: " + str(i)+ str(z))
             review_data = get_review_content(EachPart)
+
+            print("restaurant: " + str(review_data))
             check = check_date(review_data[2])
             if(check == "write"):
                 # write into Db
@@ -180,24 +194,21 @@ def iterate_activity(initial_url,id):
                 pass
 
 def iterate_sight(initial_url, id):
-    initial_response = session.get(initial_url)
+    try:
+        initial_response = session.get(initial_url)
+    except:
+        return
     html_soup = BeautifulSoup(initial_response.text, 'lxml')
 
     # get Name and add to db
-    item_name = html_soup.find('h1', class_='ui_header h1').get_text()
+    item_soup = html_soup.find('h1', class_='ui_header h1')
+    if (item_soup != None):
+        item_name = item_soup.get_text()
+    else:
+        item_name = 'Name not Available'
 
     item_id = db_connector.write_activity(id, item_name, 'sight')
 
-    # number of review Pages for single Item
-    # inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
-    # number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
-    #
-    # print(number_of_pages_html)
-    # if (len(number_of_pages_html) != 0):
-    #     number_of_pages = int(number_of_pages_html[-1].get_text())
-    # else:
-    #     number_of_pages = 1
-    # print('NoP: ' + str(number_of_pages))
     number_of_pages = html_soup.find('span', class_='location-review-review-list-parts-LanguageFilter__paren_count--2vk3f')
     if(number_of_pages != None):
         number_of_pages = number_of_pages.get_text()
@@ -211,10 +222,15 @@ def iterate_sight(initial_url, id):
         # print("i: " + str(i))
         if (i > 0):
             bool = True
+
             loop_url = create_url_hotel(initial_url, i)
+            print(loop_url)
             x = 0
             while(bool):
-                loop_response = get(loop_url,headers = header)
+                try:
+                    loop_response = session.get(loop_url, headers = header)
+                except:
+                    continue
                 new_soup = BeautifulSoup(loop_response.text, 'lxml')
                 print(new_soup.find('button', class_='_3WHa1yVQ _N28mfeX sriconym _1m8gT36z'))
                 if(new_soup.find('button', class_='_3WHa1yVQ _N28mfeX sriconym _1m8gT36z') is None):
@@ -224,17 +240,14 @@ def iterate_sight(initial_url, id):
                     continue
 
                 time.sleep(0.5)
-            print(loop_url)
-            # get Reviews
-            loop_response = session.get(loop_url)
-            html_soup = BeautifulSoup(loop_response.text, 'lxml')
-            review_containers = html_soup.findAll('div', class_='location-review-card-Card__ui_card--2Mri0 location-review-card-Card__card--o3LVm location-review-card-Card__section--NiAcw')
 
         else:
             review_containers = html_soup.findAll('div', class_='location-review-card-Card__ui_card--2Mri0 location-review-card-Card__card--o3LVm location-review-card-Card__section--NiAcw')
 
         for EachPart in review_containers:
             review_data = get_review_content_sight(EachPart)
+            print("sight: " +  str(review_data))
+
             check = check_date(review_data[2])
             # print("date" + review_data[2] +" Check " + check)
             if (check == "write"):
@@ -247,35 +260,38 @@ def iterate_sight(initial_url, id):
                 pass
 
 def iterate_hotel(initial_url, id):
-    initial_response = session.get(initial_url)
+    try:
+        initial_response = session.get(initial_url)
+    except:
+        return
     html_soup = BeautifulSoup(initial_response.text, 'lxml')
 
     # get Name and add to db
-    item_name = html_soup.find('h1', class_='hotels-hotel-review-atf-info-parts-Heading__heading--2ZOcD').get_text()
-
+    item_soup = html_soup.find('h1', class_='hotels-hotel-review-atf-info-parts-Heading__heading--2ZOcD')
+    if(item_soup != None ):
+        item_name = item_soup.get_text()
+    else:
+        item_name = 'Name not Available'
+    print(item_name)
     item_id = db_connector.write_activity(id, item_name, 'hotel')
 
-    # number of review Pages for single Item
-    # inter_soup = html_soup.find('div', class_='location-review-pagination-card-PaginationCard__wrapper--3epz_')
-    # number_of_pages_html = inter_soup.findAll('a', class_='pageNum')
-    # if (len(number_of_pages_html) != 0):
-    #     number_of_pages = int(number_of_pages_html[-1].get_text())
-    # else:
-    #     number_of_pages = 1
     number_of_pages = html_soup.findAll('span', class_='location-review-review-list-parts-LanguageFilter__paren_count--2vk3f')
-    if(number_of_pages != None):
+    if(number_of_pages != []):
         number_of_pages = number_of_pages[1].get_text()
         # print(number_of_pages)
         number_of_pages = number_of_pages.replace("(", "").replace(")","").replace(",","")
         number_of_pages = math.ceil(int(number_of_pages) / 5)
     else:
         number_of_pages = 1
-    print(item_name)
     print(number_of_pages)
     for i in range(number_of_pages):
         # print("i: " + str(i))
         if (i > 0):
-            loop_url = create_url_hotel(initial_url, i)
+            try:
+                loop_url = create_url_hotel(initial_url, i)
+            except:
+                continue
+            print(loop_url)
             # get Reviews
             loop_response = session.get(loop_url)
             html_soup = BeautifulSoup(loop_response.text, 'lxml')
@@ -286,6 +302,7 @@ def iterate_hotel(initial_url, id):
 
         for EachPart in review_containers:
             review_data = get_review_content_hotel(EachPart)
+            print("hotel: " +  str(review_data))
             check = check_date(review_data[2])
             if (check == "write"):
                 # write into Db
@@ -320,12 +337,21 @@ def get_coordinates(name):
      return point
 
 def db_write_city(name):
-    coordinates = get_coordinates(name)
-    db_city_id = db_connector.write_city(name, coordinates)
-    return db_city_id
+    try:
+        coordinates = get_coordinates(name)
+        db_city_id = db_connector.write_city(name, coordinates)
+        return db_city_id
+    except:
+        db_city_id = db_connector.write_city(name, (0,0))
+        return db_city_id
 
-def iterate_pages_restaurant(url, id):
-        response = session.get(url)
+def iterate_pages_restaurant(all_urls):
+    return_urls = []
+    for url in all_urls:
+        try:
+            response = session.get(url)
+        except:
+            return
         restaurants_html = BeautifulSoup(response.text, 'lxml')
         all_restaurants = restaurants_html.findAll('div' , class_='_1kNOY9zw')
 
@@ -335,34 +361,54 @@ def iterate_pages_restaurant(url, id):
                 href = restaurant.find('a', class_= '_15_ydu6b')['href']
                 restaurant_url = 'https://www.tripadvisor.com' + href
                 # print("Restaurant: " + str(x*10 + i) + 'name: ' + href)
-                iterate_activity(restaurant_url,id)
-                i = i + 1
+                print(restaurant_url)
+                return_urls.append(restaurant_url)
+    return return_urls
 
-def iterate_pages_hotel(id,url):
+def iterate_pages_hotel(all_urls):
     # print(id)
-    response = session.get(url)
-    hotel_html = BeautifulSoup(response.text, 'lxml')
-    all_hotels = hotel_html.findAll('div', class_='listing collapsed')
+    return_urls = []
+    for url in all_urls:
+        try:
+            response = session.get(url)
+        except:
+            continue
 
-    i = 1
-    for hotel in all_hotels:
-        if(hotel.find('span', class_='ui_merchandising_pill sponsored_v2') == None):
-            # print(i)
-            href = hotel.find('a' , class_= 'property_title prominent')['href']
-            hotel_url = 'https://www.tripadvisor.com' + href
-            i =i+1
-            iterate_hotel(hotel_url, id)
+        hotel_html = BeautifulSoup(response.text, 'lxml')
+        all_hotels = hotel_html.findAll('div', class_='listing collapsed')
 
-def iterate_pages_sight(url,id):
-    response = session.get(url)
-    sights_html = BeautifulSoup(response.text, 'lxml')
-    all_sights = sights_html.findAll('div', class_='attraction_element_tall')
-    for sight in all_sights:
-        href = sight.find('div' , class_= 'tracking_attraction_title listing_title').find('a', recursive= False)['href']
-        sight_url = 'https://www.tripadvisor.com' + href
-        # print(sight_url)
-        # i =i+1
-        iterate_sight(sight_url, id)
+
+        i =0
+        for hotel in all_hotels:
+            print(i)
+            if(hotel.find('span', class_='ui_merchandising_pill sponsored_v2') == None):
+                # print(i)
+                href = hotel.find('a' , class_= 'property_title prominent')['href']
+                hotel_url = 'https://www.tripadvisor.com' + href
+                i =i+1
+                # print(href)
+                return_urls.append(hotel_url)
+    return return_urls
+
+def iterate_pages_sight(all_urls):
+    return_sights = []
+    for url in all_urls:
+
+        try:
+            response = session.get(url)
+        except:
+            continue
+        sights_html = BeautifulSoup(response.text, 'lxml')
+        all_sights = sights_html.findAll('div', class_='attraction_element_tall')
+        for sight in all_sights:
+            href = sight.find('div' , class_= 'tracking_attraction_title listing_title').find('a', recursive= False)['href']
+            sight_url = 'https://www.tripadvisor.com' + href
+            # print(sight_url)
+            # i =i+1
+            return_sights.append(sight_url)
+
+    return return_sights
+
 
 def all_urls_of_city(city_url,city_id,type):
     init_restaurant_response = session.get(city_url)
@@ -383,38 +429,41 @@ def all_urls_of_city(city_url,city_id,type):
             all_urls.append(next_page_url)
     return all_urls
 
-restaurant_url = "https://www.tripadvisor.com/Restaurants-g35805-Chicago_Illinois.html"
-hotel_url = "https://www.tripadvisor.com/Hotels-g35805-Chicago_Illinois-Hotels.html"
-sight_url = 'https://www.tripadvisor.com/Attractions-g35805-Activities-a_allAttractions.true-Chicago_Illinois.html'
-city_name = "Chicago"
-tripadvisor_city_id = "g35805"
+restaurant_url = "https://www.tripadvisor.com/Restaurants-g60898-Atlanta_Georgia.html"
+hotel_url = "https://www.tripadvisor.com/Hotels-g60898-Atlanta_Georgia-Hotels.html"
+sight_url = 'https://www.tripadvisor.com/Attractions-g60898-Activities-a_allAttractions.true-Atlanta_Georgia.html'
+city_name = "Atlanta"
+tripadvisor_city_id = "g60898"
 
 if __name__ == '__main__':
     db_city_id = db_write_city(city_name)
-    restaurant_urls = all_urls_of_city(restaurant_url, tripadvisor_city_id,'rest')
-    # random.shuffle(restaurant_urls)
-    hotel_urls = all_urls_of_city(hotel_url,tripadvisor_city_id,'hotel')
-    # random.shuffle(hotel_urls)
-    sight_urls = all_urls_of_city(sight_url, tripadvisor_city_id, "sight")
-    random.shuffle(sight_urls)
-    restaurant_helper = partial(iterate_pages_restaurant,id = db_city_id)
-    hotel_helper = partial(iterate_pages_hotel, db_city_id)
-    sight_helper = partial(iterate_pages_sight,id = db_city_id)
-    print(db_city_id)
-    p = Pool(processes=4)
-    # for url in sight_urls:
-    #     iterate_pages_sight(url,db_city_id)
-    print(len(sight_urls))
-    p.map_async(sight_helper, sight_urls)
-    # p.close()
-    # p.join()
-    p.map_async(hotel_helper, hotel_urls)
-    # p.close()
-    # p.join()
-    p.map_async(restaurant_helper, restaurant_urls)
 
+    restaurant_pages_urls = all_urls_of_city(restaurant_url, tripadvisor_city_id,'rest')
+    all_restaurants  = iterate_pages_restaurant(restaurant_pages_urls)
+    all_restaurants = list(dict.fromkeys(all_restaurants))
+    random.shuffle(all_restaurants)
+    restaurant_helper = partial(iterate_activity, id = db_city_id)
+    p = Pool(processes=4)
+    p.map(restaurant_helper, all_restaurants)
     p.close()
     p.join()
 
-
-
+    hotel_pages_urls = all_urls_of_city(hotel_url,tripadvisor_city_id,'hotel')
+    all_hotels = iterate_pages_hotel(hotel_pages_urls)
+    all_hotels = list(dict.fromkeys(all_hotels))
+    random.shuffle(all_hotels)
+    hotel_helper = partial(iterate_hotel ,id = db_city_id)
+    x= Pool(processes=4)
+    x.map(hotel_helper, all_hotels)
+    x.close()
+    x.join()
+    #
+    sight_pages_urls = all_urls_of_city(sight_url, tripadvisor_city_id, "sight")
+    all_sights = iterate_pages_sight(sight_pages_urls)
+    all_sights = list(dict.fromkeys(all_sights))
+    random.shuffle(all_sights)
+    sight_helper = partial(iterate_sight ,id = db_city_id)
+    a = Pool(processes=4)
+    a.map(sight_helper, all_sights)
+    a.close()
+    a.join

@@ -4,10 +4,15 @@ class db_connector:
         conn = None
         try:
             connection = psycopg2.connect(user = "postgres",
-                                          password = "2909",
-                                          host = "127.0.0.1",
+                                          password = "1234password",
+                                          host = "database-1.c0dgpcuvhe44.eu-central-1.rds.amazonaws.com",
                                           port = "5432",
                                           database = "postgres")
+            # connection = psycopg2.connect(user = "postgres",
+            #                               password = "2909",
+            #                               host = "127.0.0.1",
+            #                               port = "5432",
+            #                               database = "postgres")
 
             cursor = connection.cursor()
 
@@ -34,11 +39,18 @@ class db_connector:
     def write_into_db(sql,values):
         conn = None
         try:
+            # connection = psycopg2.connect(user = "postgres",
+            #                               password = "2909",
+            #                               host = "127.0.0.1",
+            #                               port = "5432",
+            #                               database = "postgres")
+
             connection = psycopg2.connect(user = "postgres",
-                                          password = "2909",
-                                          host = "127.0.0.1",
+                                          password = "1234password",
+                                          host = "database-1.c0dgpcuvhe44.eu-central-1.rds.amazonaws.com",
                                           port = "5432",
                                           database = "postgres")
+
 
             cursor = connection.cursor()
 
