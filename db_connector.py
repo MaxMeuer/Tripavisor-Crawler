@@ -4,12 +4,12 @@ class db_connector:
         conn = None
         try:
             connection = psycopg2.connect(user = "postgres",
-                                          password = "1234password",
-                                          host = "database-1.c0dgpcuvhe44.eu-central-1.rds.amazonaws.com",
+                                          password = "",
+                                          host = "",
                                           port = "5432",
                                           database = "postgres")
             # connection = psycopg2.connect(user = "postgres",
-            #                               password = "2909",
+            #                               password = "",
             #                               host = "127.0.0.1",
             #                               port = "5432",
             #                               database = "postgres")
